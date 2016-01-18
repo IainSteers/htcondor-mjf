@@ -22,12 +22,16 @@ Here is a mapping of the Machine Feature and where it can be located in HTCondor
 
 total_CPU -> params['NUM_CPUS'] # Using NUM_CPUS instead of NUM_DETECTED_CPUS as the former can be overriden by the sys-admin and cores reserved for other use.
 
-hs06 -> Site-provided value in the MJF_HS06 config key. If no key is defined with that name then a check to see if the /var/lib/mjf/benchmark file exists.
+hs06 -> Site-provided value in the 'MJF_HS06' config key. On HTCondor start a STARTD_BENCHMARK_JOB is run, first this checks for the existence of the config knob.
 
-If the file does not exist then the startd-cron kicks of a mutli-core LHCb Fast benchmark, running the benchmark on a number of cores matching the previously discovered
-total_CPU value.
+If the knob exists then the benchmark exits immediately.
 
-Once the benchmark has finished (~1min), the result of the benchmark is written to /var/lib/mjf/benchmark and consequently used as an approximated hs06 value.
+Else, the benchmark job runs a multi-core LHCB-Fast benchmark tuned to NUM_CPUS and writes the result to /etc/machinefeatures/hs06 file, as well as pushed to standard out as a benchmark value.
+
+(This job also checks for the existence of the /etc/machinefeatures/hs06 file so that condor restarts do not automatically re-benchmark.)
+
+
+##TODO: Clarify with Brian whether he wants the benchmark run as a STARTD_BENCMARK_JOB. I am assuming that he will.
 
 shutdowntime -> is dynamic and can be pulled either from the file /etc/machinefeatures/shutdowntime or fromm the htcondor ad. In the case of the latter, the file is also written
 so that experiment pilots can discover the shutdown time.
@@ -38,12 +42,9 @@ grace_secs -> is provided as a default value of TBD. Provided by the config key 
 
 Started when a user job starts on the node. Meaning it will need to be called as part of the USER_JOB_WRAPPER.
 
-Could also consider skimming the values from machine.ad and job.ad instead of directly querying HTCondor. 
+Will extract the necessary values such as number of cores, and the hepspec values from the files pointed to by env vars MACHINE_AD and JOB_AD.
 
-TODO: Clarify with Brian at what stage the machine.ad file appears.
-I am assuming it would be prior to the USER_JOB_WRAPPER starting.
-
-## Benchmarking
+##TODO: Clarify with others the meaning of wall_limit_secs, my understanding is (unix job start time) + (site limit in seconds)
 
 ## Classads Insertion
 
